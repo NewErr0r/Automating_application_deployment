@@ -1,0 +1,41 @@
+---
+- name: Automating the basic VM configuration
+  hosts: app
+  become: true 
+
+  tasks: 
+    - name: Install Curl 
+      apt: 
+        name: 'curl'
+        state: latest
+        update_cache: true
+
+    - name: Configurations permissions for UFW
+      ufw:
+        rule: allow
+        port: '{{ item }}'
+        proto: tcp 
+        state: enabled
+      loop: 
+        - '22'
+        - '80'
+        - '8080'
+        - '1834'
+
+    - name: Changing the port SSH 22-->1834
+      lineinfile:
+        dest: "/etc/ssh/sshd_config"
+        regexp: "^Port"
+        line: 'Port 1834'
+      notify: 
+        - Restart sshd 
+
+
+  handlers:
+    - name: Restart sshd
+      service: 
+        name: sshd
+        state: restarted
+        
+        
+      
