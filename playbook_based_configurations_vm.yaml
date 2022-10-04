@@ -56,7 +56,7 @@
         - Devopsengineer
         - Projectmanager
       vars:
-        id_rsa_pub: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCovvBkeLIDsvbCyQsMWtPWVgGVKcwAqRONiBJ9JyrVCQbruyMPutatjSlhNpYXKLlP4BXHrGrmAVqeI155li1fkNP5Il7viHRE0HvA3M2extNGDDCiX5f5OlIeT9p/D9OHvWWozLjN2NAGEW24feuzKPZb6Kyv2W3yHbiIU3wt8v50VAIA2+PAfElHp1jplGHQLmYuT6Cc26Pn3WYXZ8t8oU77T6Ki5qDG5V5DVZI3Ym5gqqXXtJYzET9piJvO6qiIcgljtOGlUH9H9QNLEbuF+RKIhL3pFAnF8S79Km2A3j9KFZw6prDR6/VeMffMrNSZLeYztzDGEzm35uz5q6j+qrKsuA4SfpbSOcBwaariOoKpb6JfogoJRgCqxR5O1AKR/Oqhdk6JOlKJk+tIXFmOczH7da/W93f8KGGve4iHRvz/e3vYA7exXIVkD8mc/VmIoT1kqh/uNGia/adnyCgvMpL8JXLJgY2DThpjHslUr0RTEpQJTLTka3D43YV37kM="
+        id_rsa_pub: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCbFX996jQIoGNh9bqjGqzN1EIfqE5k6JPuDJ3IzLvxImBK6ayN7htTh7fK8OrAE45FHvJw3SdBnTb6Liox8MhCTLylWFykmZ9LusCD7tTjHxCcBZ5oIUAhQFeFwGYIGJHSN+638kosiKVZjdcHhWFFGETlGt5wtHEbxAjXq/adc3Q9piDiyr2PllWR4X8by0GDV1XNAsk12xQGbatamukJrIJnHoCxNUeg1oUGmxVxMn4wq1rZAfq7032MUEu7tceFjBUV1NyV/9m8+b5ufNxvXtn+5PM2oXK38lw4ryMYbgzQ5xemGQDdq3+x37I7YdDA//4WgviEc7JCpiMXcxckADKZQPhM6uSr9X5P3JikpcTjdZfhjSGBhH0HLnebeWoN8tDlz7tJi8ueFJ14tN0HM+kAIvalHGxb9S/dcz3178Ad75PFZcJW2GyyRhtd8/YCZLjNpOg50qdag6HfilBa/G+8NKRrPP4a2jtDA10+3MY9u8of9BMAOirHK/F3lTs= dima@ubuntu-server"
 
     - name: Install the Docker package | Install aptitude
       apt:
@@ -96,3 +96,34 @@
     - name: Install the Docker package | Install Docker Module for Python
       pip:
         name: docker
+
+    - name: Run the docker-compose installation script
+      script: ./wsr-skillcloud/docker-compose.sh        
+
+    - name: Create a directory /skillcloud-nginx
+      file:
+        path: /skillcloud-nginx
+        state: directory
+
+    - name: Copying files needed to build images
+      copy:
+        src: ./wsr-skillcloud/docker-compose.yml
+        dest: /skillcloud-nginx
+
+    - name: Create a directory /skillcloud-nginx/{ site, balance}
+      file:
+        path: /skillcloud-nginx/"{{ item }}"
+        state: directory
+      loop:
+        - site
+        - balance
+
+    - name: Copying files needed to build images
+      copy:
+        src: ./wsr-skillcloud/"{{ item.src }}"
+        dest: /skillcloud-nginx/"{{ item.dest }}"
+      loop:
+         - { src: 'Dockerfile-site', dest: 'site' }
+         - { src: 'Dockerfile-balance', dest: 'balance' }
+         - { src: 'index.html', dest: 'site'}
+         - { src: 'nginx.conf', dest: 'balance' }
