@@ -127,8 +127,15 @@
       loop:
          - { src: Dockerfile-site, dest: site }
          - { src: Dockerfile-balance, dest: balance }
-         - { src: index.html, dest: site}
-         - { src: nginx.conf, dest: balance }
+         
+
+    - name: Copying files needed to build images
+      copy:
+        src: ./wsr-skillcloud/{{ item.src }}
+        dest: /skillcloud-nginx/{{ item.dest }}
+      loop:
+        - { src: index.html, dest: site}
+        - { src: nginx.conf, dest: balance }
 
     - name: Restart SSH 
       service: 
