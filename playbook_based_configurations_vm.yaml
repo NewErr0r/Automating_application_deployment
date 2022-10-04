@@ -21,6 +21,8 @@
         - '80'
         - '8080'
         - '1834'
+      notify:
+        - Restart UFW
 
     - name: Change the SSH configuration file | Connection port should be 1834
       lineinfile:
@@ -56,7 +58,7 @@
         - Devopsengineer
         - Projectmanager
       vars:
-        id_rsa_pub: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCbFX996jQIoGNh9bqjGqzN1EIfqE5k6JPuDJ3IzLvxImBK6ayN7htTh7fK8OrAE45FHvJw3SdBnTb6Liox8MhCTLylWFykmZ9LusCD7tTjHxCcBZ5oIUAhQFeFwGYIGJHSN+638kosiKVZjdcHhWFFGETlGt5wtHEbxAjXq/adc3Q9piDiyr2PllWR4X8by0GDV1XNAsk12xQGbatamukJrIJnHoCxNUeg1oUGmxVxMn4wq1rZAfq7032MUEu7tceFjBUV1NyV/9m8+b5ufNxvXtn+5PM2oXK38lw4ryMYbgzQ5xemGQDdq3+x37I7YdDA//4WgviEc7JCpiMXcxckADKZQPhM6uSr9X5P3JikpcTjdZfhjSGBhH0HLnebeWoN8tDlz7tJi8ueFJ14tN0HM+kAIvalHGxb9S/dcz3178Ad75PFZcJW2GyyRhtd8/YCZLjNpOg50qdag6HfilBa/G+8NKRrPP4a2jtDA10+3MY9u8of9BMAOirHK/F3lTs= dima@ubuntu-server"
+        id_rsa_pub: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsg6nOAK2cPplKAtXcpjmAm5yrvj9cECyl+HWCrQFfYNN5Gr9ODze/NPxbvm0NG3Hcs0oiIWSSVZBUNaZbkWMoL4ue4aPbr0qeQpumtm7I/mVQ48yiwFkYQ5+ovea/hcXuXKNJdRUkVH8P+hr7DNRWsJLvjBL6p0Ubq4DojdqTyPsKcgVW+XbLIigRjMCchtCd1jrvUye5goialGMBaaAk+vb+Kau3w52n9wfH3YCBAe/+1BS70WJAM+Y/ahWqMm3nEjgkGmIv6Jhu/0Np9S2DDPhU7D0s2eAnL7xUUfhtd4/JL3+4E6Ol5/ECZSW+K5rrXvZEtiSa6ivfQkJgpluv admin@SRV"
 
     - name: Install the Docker package | Install aptitude
       apt:
@@ -110,9 +112,9 @@
         src: ./wsr-skillcloud/docker-compose.yml
         dest: /skillcloud-nginx
 
-    - name: Create a directory /skillcloud-nginx/{ site, balance}
+    - name: Create a directory /skillcloud-nginx/{site,balance}
       file:
-        path: /skillcloud-nginx/"{{ item }}"
+        path: /skillcloud-nginx/{{ item }}
         state: directory
       loop:
         - site
@@ -120,10 +122,28 @@
 
     - name: Copying files needed to build images
       copy:
-        src: ./wsr-skillcloud/"{{ item.src }}"
-        dest: /skillcloud-nginx/"{{ item.dest }}"
+        src: ./wsr-skillcloud/{{ item.src }}
+        dest: /skillcloud-nginx/{{ item.dest }}/Dockerfile
       loop:
-         - { src: 'Dockerfile-site', dest: 'site' }
-         - { src: 'Dockerfile-balance', dest: 'balance' }
-         - { src: 'index.html', dest: 'site'}
-         - { src: 'nginx.conf', dest: 'balance' }
+         - { src: Dockerfile-site, dest: site }
+         - { src: Dockerfile-balance, dest: balance }
+         - { src: index.html, dest: site}
+         - { src: nginx.conf, dest: balance }
+
+    - name: Restart SSH 
+      service: 
+        name: sshd 
+        state: restarted 
+
+    - name: Change ssh port to 1834
+      set_fact:
+        ansible_port: 1834
+
+    - name: Reboot virtual machines
+      reboot:
+
+  handlers:
+    - name: Restart UFW 
+      service: 
+        name: ufw 
+        state: restarted
